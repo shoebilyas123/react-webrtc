@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../context/socket';
 import Button from '../atoms/button';
 import { JOIN_ROOM } from '../../constants/socket';
+import Layout from '../atoms/layout';
+import Input from '../atoms/input';
 
 const Lobby = () => {
   const [alias, setAlias] = useState<string>('');
@@ -38,33 +40,33 @@ const Lobby = () => {
   }, [handleRoomJoined]);
 
   return (
-    <div>
-      <h1>Lobby</h1>
-      <form className="flex flex-col w-[25%]">
-        <label htmlFor="user-alias">Alias</label>
-        <input
+    <Layout>
+      <h1 className="text-white text-xl">Lobby</h1>
+      <form className="bg-neutral-800 px-6 py-2 rounded-md flex flex-col w-[25%]">
+        <Input
+          label={'Your Alias'}
+          name="user-alias"
           id="user-alias"
           value={alias}
-          className="outline"
           onChange={(ev: ChangeEvent<HTMLInputElement>) =>
             setAlias(ev.target.value)
           }
-        ></input>
+        ></Input>
 
-        <label htmlFor="room-id">Room No.</label>
-        <input
-          className="outline"
+        <Input
+          name={'room-id'}
+          label={'Room ID'}
           id="room-id"
           value={roomNumber}
           onChange={(ev: ChangeEvent<HTMLInputElement>) =>
             setRoomNumber(ev.target.value)
           }
-        ></input>
+        ></Input>
         <Button type="submit" onClick={onSubmitHandler}>
           Join
         </Button>
       </form>
-    </div>
+    </Layout>
   );
 };
 

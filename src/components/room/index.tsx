@@ -14,11 +14,11 @@ import {
 } from '../../constants/socket';
 import peer from '../../services/peer';
 import Button from '../atoms/button';
+import Layout from '../atoms/layout';
 
 const Room = () => {
   const { socket } = useSocket();
-  // const { roomNumber, userAlias } = useParams();
-
+  const { roomNumber } = useParams();
   const [remoteConnData, setRemoteConnData] = useState<{
     socketId: string;
     userAlias: string;
@@ -65,13 +65,16 @@ const Room = () => {
 
     for (const track of _str.getTracks()) {
       peer.peer?.addTrack(track, _str);
+      console.log('GOT TRACKS MINE');
     }
   };
 
   const handleNegotiationNeeded = useCallback(async () => {
     const offer = await peer.makeOffer();
-    socket.emit(PEER_NEG_NEEDED, { to: remoteConnData?.socketId, offer });
-  }, []);
+    if (remoteConnData)
+      socket.emit(PEER_NEG_NEEDED, { to: remoteConnData?.socketId, offer });
+  }, [remoteConnData]);
+
   const handleIncomingNegotiation = useCallback(
     async ({ from, offer }: any) => {
       const ans = await peer.makeAnswer(offer);
@@ -81,6 +84,11 @@ const Room = () => {
   );
   const handleNegotiationFinal = useCallback(async ({ offer }: any) => {
     await peer.setLocalDescription(offer);
+    const _str = await generateUserMedia();
+
+    for (const track of _str.getTracks()) {
+      peer.peer?.addTrack(track, _str);
+    }
   }, []);
 
   useEffect(() => {
@@ -88,9 +96,9 @@ const Room = () => {
   }, [peer, handleNegotiationNeeded]);
 
   useEffect(() => {
-    peer.peer?.addEventListener('track', (ev) => {
+    peer.peer?.addEventListener('track', (ev: any) => {
       const remoteStr = ev.streams;
-      setRemoteStream(remoteStr[0]);
+      setRemoteStream(ev.streams);
     });
   }, [remoteStream]);
 
@@ -111,30 +119,39 @@ const Room = () => {
   }, []);
 
   return (
-    <div className="w-full flex flex-col items-center justify-center">
-      <h1>Room</h1>
-      {remoteConnData?.socketId ? (
-        <Button
-          children={<FaPhone />}
-          onClick={() => generateOffer(remoteConnData?.socketId)}
-        ></Button>
-      ) : null}
-      <h2>
-        {remoteConnData?.socketId
-          ? `Connected To ${remoteConnData?.userAlias}`
-          : `Room Empty`}
-      </h2>
-      <div className="w-full grid grid-cols-2 items-center justify-center">
+    <Layout>
+      <div
+        id={'title-bar'}
+        className="z-99999 absolute top-0 py-2 px-4 w-full bg-neutral-800 text-white flex items-center justify-between"
+      >
+        <div className="rounded-md bg-purple-700 px-2">
+          <h1>
+            Room ID: <b className="font-bold">{roomNumber || 'TLDR'}</b>
+          </h1>
+        </div>
+        {remoteConnData?.socketId ? (
+          <Button
+            children={<FaPhone />}
+            onClick={() => generateOffer(remoteConnData?.socketId)}
+          ></Button>
+        ) : null}
+        <h2>
+          {remoteConnData?.socketId
+            ? `Connected To ${remoteConnData?.userAlias}`
+            : `Room Empty`}
+        </h2>
+      </div>
+      {/* TODO: Replace ReactPlayer with custom <video/> element */}
+      {/* <div className="w-full items-center justify-center">
         {myStream ? (
           <ReactPlayer
             autoPlay
             playing
-            width={'400'}
-            height={'245'}
+            width={'100%'}
+            height={'100'}
             url={myStream}
           />
         ) : null}
-
         {remoteStream ? (
           <ReactPlayer
             autoPlay
@@ -144,8 +161,8 @@ const Room = () => {
             url={remoteStream}
           />
         ) : null}
-      </div>
-    </div>
+      </div> */}
+    </Layout>
   );
 };
 
